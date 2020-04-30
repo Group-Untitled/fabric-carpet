@@ -17,10 +17,13 @@ scoreboard_add('counter')
 scoreboard_add('lvl','level')
 </pre>
 
-### `scoreboard_remove(objective)`
+### `scoreboard_remove(objective)` `scoreboard_remove(objective, key)`
 
-Removes an objective. Returns `true` if objective has existed and has been removed.
+Removes an entire objective, or an entry in the scoreboard associated with the key. 
+Returns `true` if objective has existed and has been removed, or previous
+value of the scoreboard if players score is removed. Returns `null` if objective didn't exist, or a key was missing
+for the objective.
 
-### `scoreboard_display(objective, place)`
+### `scoreboard_display(place, objective)`
 
-sets display location for a specified `objective`. If `place` is `null`, then display is cleared.
+sets display location for a specified `objective`. If `objective` is `null`, then display is cleared.

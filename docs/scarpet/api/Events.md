@@ -14,12 +14,14 @@ Here is a list of events that can be handled by scarpet. This list includes pref
 them, but you can add any function to any event if it accepts required number of parameters:
 
 <pre>
+// world callbacks
 __on_tick()         // can access blocks and entities in the overworld
 __on_tick_nether()  // can access blocks and entities in the nether
 __on_tick_ender()   // can access blocks and entities in the end
 __on_chunk_generated(x,z) // called after a chunk is promoted to the full chunk,
                           // prodiving lowest x and z coords in the chunk
                           // event will not work with optifine installed in the game
+__on_lightning(block, mode) // mode is `true` if lightning caused horse trap to spawn
 // player specific callbacks
 __on_player_uses_item(player, item_tuple, hand)  // right click action
 __on_player_releases_item(player, item_tuple, hand)  // client action (e.g. bow)
@@ -31,6 +33,10 @@ __on_player_interacts_with_block(player, hand, block, face, hitvec)  //right cli
 __on_player_places_block(player, item_tuple, hand, block) // player have just placed the block.
 __on_player_interacts_with_entity(player, entity, hand)
 __on_player_attacks_entity(player, entity)
+__on_player_takes_damage(player, amount, source, source_entity)
+__on_player_deals_damage(player, amount, entity)
+__on_player_dies(player)
+__on_player_respawns(player)
 __on_player_rides(player, forward, strafe, jumping, sneaking)
 __on_player_jumps(player)
 __on_player_deploys_elytra(player)

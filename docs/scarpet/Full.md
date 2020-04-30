@@ -276,7 +276,8 @@ global_foo = floor(rand(10));
 check_foo_not_zero();
 ...
 check_foo_not_zero() -> if(global_foo == 0, global_foo = 1)
-</pre># Variables and Constants
+</pre>
+# Variables and Constants
 
 `scarpet` provides a number of constants that can be used literally in scripts
 
@@ -1874,61 +1875,6 @@ top('motion', x, y, z)  => 63
 top('ocean_floor', x, y, z)  => 41
 </pre>
 
-### `loaded(pos)`
-
-Boolean function, true if the block is accessible for the game mechanics. Normally `scarpet` doesn't check if operates 
-on loaded area - the game will automatically load missing blocks. We see this as advantage. Vanilla `fill/clone` 
-commands only check the specified corners for loadness.
-
-To check if block is truly loaded, I mean in memory, use `generation_status(x) != null`, as chunks can still be loaded 
-outside of the playable area, just are not used any of the game mechanics processes.
-
-<pre>
-loaded(pos(players()))  => 1
-loaded(100000,100,1000000)  => 0
-</pre>
-
-### `(Deprecated) loaded_ep(pos)`
-
-Boolean function, true if the block is loaded and entity processing, as per 1.13.2
-
-Deprecated as of scarpet 1.6, use `loaded_status(x) > 0`, or just `loaded(x)` with the same effect
-
-### `loaded_status(pos)`
-
-Returns loaded status as per new 1.14 chunk ticket system, 0 for inaccessible, 1 for border chunk, 2 for ticking, 
-3 for entity ticking
-
-### `generation_status(pos), generation_status(pos, true)`
-
-Returns generation status as per new 1.14 chunk ticket system. Can return any value from several available but chunks 
-can only be valid in a few states: `full`, `features`, `liquid_carvers`, and `structure_starts`. Returns `null` 
-if the chunk is not in memory unless called with optional `true`.
-
-### `structures(pos), structures(pos, structure_name)`
-
-Returns structure information for a given block position. Note that structure information is the same for all the 
-blocks from the same chunk. `structures` function can be called with a block, or a block and a structure name. In 
-the first case it returns a map of structures at a given position, keyed by structure name, with values indicating 
-the bounding box of the structure - a pair of two 3-value coords (see examples). When called with an extra structure 
-name, returns list of components for that structure, with their name, direction and two sets of coordinates 
-indicating the bounding box of the structure piece.
-
-### `structure_references(pos), structure_references(pos, structure_name)`
-
-Returns structure information that a chunk with a given block position is part of. `structure_references` function 
-can be called with a block, or a block and a structure name. In the first case it returns a list of structure names 
-that give chunk belongs to. When called with an extra structure name, returns list of positions pointing to the 
-lowest block position in chunks that hold structure starts for these structures. You can query that chunk structures 
-then to get its bounding boxes.
-
-### `set_structure(pos, structure_name), set_structure(pos, structure_name, null)`
-
-Creates or removes structure information of a structure associated with a chunk of `pos`. Unlike `plop`, blocks are 
-not placed in the world, only structure information is set. For the game this is a fully functional structure even 
-if blocks are not set. To remove structure a given point is in, use `structure_references` to find where current 
-structure starts.
-
 ### `suffocates(pos)`
 
 Boolean function, true if the block causes suffocation.
@@ -2064,15 +2010,222 @@ Returns the map colour of a block at position. One of:
 *   `green_terracotta`
 *   `red_terracotta`
 *   `black_terracotta`
+
+
+### `loaded(pos)`
+
+Boolean function, true if the block is accessible for the game mechanics. Normally `scarpet` doesn't check if operates 
+on loaded area - the game will automatically load missing blocks. We see this as advantage. Vanilla `fill/clone` 
+commands only check the specified corners for loadness.
+
+To check if block is truly loaded, I mean in memory, use `generation_status(x) != null`, as chunks can still be loaded 
+outside of the playable area, just are not used any of the game mechanics processes.
+
+<pre>
+loaded(pos(players()))  => 1
+loaded(100000,100,1000000)  => 0
+</pre>
+
+### `(Deprecated) loaded_ep(pos)`
+
+Boolean function, true if the block is loaded and entity processing, as per 1.13.2
+
+Deprecated as of scarpet 1.6, use `loaded_status(x) > 0`, or just `loaded(x)` with the same effect
+
+### `loaded_status(pos)`
+
+Returns loaded status as per new 1.14 chunk ticket system, 0 for inaccessible, 1 for border chunk, 2 for ticking, 
+3 for entity ticking
+
+### `is_chunk_generated(pos)`, `is_chunk_generated(pos, force)`
+
+Returns `true` if the region file for the chunk exists, 
+`false` otherwise. If optional force is `true` it will also check if the chunk has a non-empty entry in its region file
+Can be used to assess if the chunk has been touched by the game or not.
+
+`generation_status(pos, false)` only works on currently loaded chunks, and `generation_status(pos, true)` will create
+an empty loaded chunk, even if it is not needed, so `is_chunk_generated` can be used as a efficient proxy to determine
+if the chunk physically exists.
+
+Running `is_chunk_generated` is has no effects on the world, but since it is an external file operation, it is
+considerably more expensive (unless area is loaded) than other generation and loaded checks.
+
+### `generation_status(pos), generation_status(pos, true)`
+
+Returns generation status as per the ticket system. Can return any value from several available but chunks 
+can only be stable in a few states: `full`, `features`, `liquid_carvers`, and `structure_starts`. Returns `null` 
+if the chunk is not in memory unless called with optional `true`.
+
+### `inhabited_time(pos)`
+
+Returns inhabited time for a chunk.
+
+### `structures(pos), structures(pos, structure_name)`
+
+Returns structure information for a given block position. Note that structure information is the same for all the 
+blocks from the same chunk. `structures` function can be called with a block, or a block and a structure name. In 
+the first case it returns a map of structures at a given position, keyed by structure name, with values indicating 
+the bounding box of the structure - a pair of two 3-value coords (see examples). When called with an extra structure 
+name, returns list of components for that structure, with their name, direction and two sets of coordinates 
+indicating the bounding box of the structure piece.
+
+### `structure_references(pos), structure_references(pos, structure_name)`
+
+Returns structure information that a chunk with a given block position is part of. `structure_references` function 
+can be called with a block, or a block and a structure name. In the first case it returns a list of structure names 
+that give chunk belongs to. When called with an extra structure name, returns list of positions pointing to the 
+lowest block position in chunks that hold structure starts for these structures. You can query that chunk structures 
+then to get its bounding boxes.
+
+### `set_structure(pos, structure_name), set_structure(pos, structure_name, null)`
+
+Creates or removes structure information of a structure associated with a chunk of `pos`. Unlike `plop`, blocks are 
+not placed in the world, only structure information is set. For the game this is a fully functional structure even 
+if blocks are not set. To remove structure a given point is in, use `structure_references` to find where current 
+structure starts.
+
+### `plop(pos, what)`
+
+Plops a structure or a feature at a given `pos`, so block, triple position coordinates or a list of coordinates. 
+To `what` gets plopped and exactly where it often depends on the feature or structure itself. For example, all 
+structures are chunk aligned, and often span multiple chunks. Repeated calls to plop a structure in the same chunk 
+would result either in the same structure generated on top of each other, or with different state, but same position. 
+Most structures generate at specific altitudes, which are hardcoded, or with certain blocks around them. API will 
+cancel all extra position / biome / random requirements for structure / feature placement, but some hardcoded 
+limitations may still cause some of structures/features not to place. Some features require special blocks to be
+present, like coral -> water or ice spikes -> snow block, and for some features, like fossils, placement is all sorts 
+of messed up. This can be partially avoided for structures by setting their structure information via `set_structure`, 
+which sets it without looking into world blocks, and then use `plop` to fill it with blocks. This may, or may not work.
+
+All generated structures will retain their properties, like mob spawning, however in many cases the world / dimension 
+itself has certain rules to spawn mobs, like plopping a nether fortress in the overworld will not spawn nether mobs, 
+because nether mobs can spawn only in the nether, but plopped in the nether - will behave like a valid nether fortress.
+
+`plop` will not use world random number generator to generate structures and features, but its own. This has a benefit 
+that they will generate properly randomly, not the same time every time.
+
+Structure list:
+
+*   `monument`: Ocean Monument. Generates at fixed Y coordinate, surrounds itself with water.
+*   `fortress`: Nether Fortress. Altitude varies, but its bounded by the code.
+*   `mansion`: Woodland Mansion
+*   `jungle_temple`: Jungle Temple
+*   `desert_temple`: Desert Temple. Generates at fixed Y altitude.
+*   `end_city`: End City with Shulkers
+*   `igloo`: Igloo
+*   `shipwreck`: Shipwreck, version1?
+*   `shipwreck2`: Shipwreck, version2?
+*   `witch_hut`
+*   `ocean_ruin`, `ocean_ruin_small`, `ocean_ruin_tall`: Stone variants of ocean ruins.
+*   `ocean_ruin_warm`, `ocean_ruin_warm_small`, `ocean_ruin_warm_tall`: Sandstone variants of ocean ruins.
+*   `treasure`: A treasure chest. Yes, its a whole structure.
+*   `pillager_outpost`: A pillager outpost.
+*   `mineshaft`: A mineshaft.
+*   `mineshaft_mesa`: A Mesa (Badlands) version of a mineshaft.
+*   `village`: Plains, oak village.
+*   `village_desert`: Desert, sandstone village.
+*   `village_savanna`: Savanna, acacia village.
+*   `village_taiga`: Taiga, spruce village.
+*   `village_snowy`: Resolute, Canada.
+*   `nether_fossil`: Pile of bones (1.16)
+*   `ruined_portal`: Ruined portal, random variant.
+*   `bastion_remnant`: Piglin bastion, random variant for the chunk (1.16)
+*   `bastion_remnant_housing`: Housing units version of a piglin bastion (1.16)
+*   `bastion_remnant_stable`: Hoglin stables version of q piglin bastion (1.16)
+*   `bastion_remnant_treasure`: Treasure room version of a piglin bastion (1.16)
+*   `bastion_remnant_bridge` : Bridge version of a piglin bastion (1.16)
+
+Feature list:
+
+*   `oak`
+*   `oak_beehive`: oak with a hive (1.15+).
+*   `oak_large`: oak with branches.
+*   `oak_large_beehive`: oak with branches and a beehive (1.15+).
+*   `birch`
+*   `birch_large`: tall variant of birch tree.
+*   `shrub`: low bushes that grow in jungles.
+*   `shrub_acacia`: low bush but configured with acacia (1.14 only)
+*   `shrub_snowy`: low bush with white blocks (1.14 only)
+*   `jungle`: a tree
+*   `jungle_large`: 2x2 jungle tree
+*   `spruce`
+*   `spruce_large`: 2x2 spruce tree
+*   `pine`: spruce with minimal leafage (1.15+)
+*   `pine_large`: 2x2 spruce with minimal leafage (1.15+)
+*   `spruce_matchstick`: see 1.15 pine (1.14 only).
+*   `spruce_matchstick_large`: see 1.15 pine_large (1.14 only).
+*   `dark_oak`
+*   `acacia`
+*   `oak_swamp`: oak with more leaves and vines.
+*   `well`: desert well
+*   `grass`: a few spots of tall grass
+*   `grass_jungle`: little bushier grass feature (1.14 only)
+*   `lush_grass`: grass with patchy ferns (1.15+)
+*   `tall_grass`: 2-high grass patch (1.15+)
+*   `fern`: a few random 2-high ferns
+*   `cactus`: random cacti
+*   `dead_bush`: a few random dead bushi
+*   `fossils`: underground fossils, placement little wonky
+*   `mushroom_brown`: large brown mushroom.
+*   `mushroom_red`: large red mushroom.
+*   `ice_spike`: ice spike. Require snow block below to place.
+*   `glowstone`: glowstone cluster. Required netherrack above it.
+*   `melon`: a patch of melons
+*   `melon_pile`: a pile of melons (1.15+)
+*   `pumpkin`: a patch of pumpkins
+*   `pumpkin_pile`: a pile of pumpkins (1.15+)
+*   `sugarcane`
+*   `lilypad`
+*   `dungeon`: Dungeon. These are hard to place, and fail often.
+*   `iceberg`: Iceberg. Generate at sea level.
+*   `iceberg_blue`: Blue ice iceberg.
+*   `lake`
+*   `lava_lake`
+*   `end_island`
+*   `chorus`: Chorus plant. Require endstone to place.
+*   `sea_grass`: a patch of sea grass. Require water.
+*   `sea_grass_river`: a variant.
+*   `kelp`
+*   `coral_tree, coral_mushroom, coral_claw`: various coral types, random color.
+*   `coral`: random coral structure. Require water to spawn.
+*   `sea_pickle`
+*   `boulder`: A rocky, mossy formation from a giant taiga biome. Doesn't update client properly, needs relogging.
+*   `crimson_fungus` (1.16)
+*   `warped_fungus` (1.16)
+*   `nether_sprouts` (1.16)
+*   `crimson_roots` (1.16)
+*   `warped_roots`  (1.16)
+*   `weeping_vines` (1.16)
+*   `twisting_vines` (1.16)
+*   `basalt_pillar` (1.16)
+
+### `reset_chunk(pos)`, `reset_chunk(from_pos, to_pos)`, `reset_chunk(l(pos, ...))`
+Removes and resets the chunk, all chunks in the specified area or all chunks in a list at once, removing all previous
+blocks and entities, and replacing it with a new generation. For all currently loaded chunks, they will be brought
+to their current generation status, and updated to the player. All chunks that are not in the loaded area, will only
+be generated to the `'structure_starts'` status, allowing to generate them fully as players are visiting them.
+Chunks in the area that has not been touched yet by the game will not be generated / regenerated.
+
+It returns a `map` with a report indicating how many chunks were affected, and how long each step took:
+ * `requested_chunks`: total number of chunks in the requested area or list
+ * `affected_chunks`: number of chunks that will be removed / regenerated
+ * `loaded_chunks`: number of currently loaded chunks in the requested area / list
+ * `layer_count_<status>`: number of chunks for which a `<status>` generation step has been performed
+ * `layer_time_<status>`: cumulative time for all chunks spent on generating `<status>` step
+ 
 # Iterating over larger areas of blocks
 
 These functions help scan larger areas of blocks without using generic loop functions, like nested `loop`.
 
-### `scan(cx, cy, cz, dx, dy, dz, px?, py?, pz?, expr)`
+### `scan(cx, cy, cz, dx, dy, dz, px?, py?, pz?, expr)`, `scan(center, range, lower_range?, expr)`
 
-Evaluates expression over area of blocks defined by its center (`cx, cy, cz`), expanded in all directions 
-by `dx, dy, dz` blocks, or optionally in negative with `d` coords, and `p` coords in positive values. `expr` 
-receives `_x, _y, _z` as coords of current analyzed block and `_`, which represents the block itself.
+Evaluates expression over area of blocks defined by its center `center = (cx, cy, cz)`, expanded in all directions 
+by `range = (dx, dy, dz)` blocks, or optionally in negative with `range` coords, and `upper_range` coords in 
+positive values.
+`center` can be defined either as a three coordinates, list of three coords, or block value.
+`range` and `lower_range` can have the same representations, just if its a block, it computes the distance to the center
+as range instead of taking the values as is.
+`expr` receives `_x, _y, _z` as coords of current analyzed block and `_`, which represents the block itself.
 
 Returns number of successful evaluations of `expr` (with `true` boolean result) unless called in void context, 
 which would cause the expression not be evaluated for their boolean value.
@@ -2221,13 +2374,23 @@ Triple of entity motion vector, `l(motion_x, motion_y, motion_z)`
 
 Respective component of the motion vector
 
-### `query(e,'name'), query(e,'custom_name'), query(e,'type')`
+### `query(e,'name'), query(e,'display_name'), query(e,'custom_name'), query(e,'type')`
 
 String of entity name
 
-<pre>query(e,'name')  => Leatherworker
+<pre>
+query(e,'name')  => Leatherworker
 query(e,'custom_name')  => null
 query(e,'type')  => villager
+</pre>
+
+## `query(e, 'command_name')`
+
+Returns a valid string to be used in commands to address an entity. Its UUID for all entities except
+player, where its their name.
+
+<pre>
+run('/kill ' + e~'command_name');
 </pre>
 
 ### `query(e,'is_riding')`
@@ -2373,6 +2536,17 @@ Returns `null` if the argument is not a player, otherwise:
 *   `shadow`: any carpet-shadowed real player
 *   `realms`: ?
 
+### `query(e, 'category')`
+Returns a lowercase string containing the category of the entity (hostile, passive, water, ambient, misc)
+
+### `query(e, 'team')`
+
+Team name for entity, or `null` if no team is assigned.
+
+### `query(e,'ping')`
+    
+Player's ping in milliseconds, or `null` if its not a player.
+
 ### `query(e,'permission_level')`
 
 Player's permission level, or `null` if not applicable for this entity.
@@ -2487,7 +2661,7 @@ Adds a vector to the motion vector. Most realistic way to apply a force to an en
 
 ### `modify(e, 'age', number)`
 
-Modifies entity's internal age counter. Fiddling with this will affect directly behaviours of complex 
+Modifies entity's internal age counter. Fiddling with this will affect directly AI behaviours of complex 
 entities, so use it with caution.
 
 ### `modify(e, 'pickup_delay', number)`
@@ -2544,6 +2718,35 @@ and `true`. If no duration is specified, or it is null or 0, the effect is remov
 
 Sets AI to stay around the home position, within `distance` blocks from it. `distance` defaults to 16 blocks. 
 `null` removes it. _May_ not work fully with mobs that have this AI built in, like Villagers.
+
+### `modify(e, 'gamemode', gamemode?), modify(e, 'gamemode',gamemode_id?)`
+
+Modifies gamemode of player to whatever string (case-insensitive) or number you put in.
+
+* 0: survival
+* 1: creative
+* 2: adventure
+* 3: spectator
+
+### `modify(e, 'jumping', true/false)`
+
+Will make the entity constantly jump if set to true, and will stop the entity from jumping if set to false.
+Note that jumping parameter can be fully controlled by the entity AI, so don't expect that this will have 
+a permanent effect. Use `'jump'` to make an entity jump once for sure.
+
+Requires a living entity as an argument.
+
+### `modify(e, 'jump'))`
+
+Will make the entity jump once.
+
+### `modify(e, 'silent', true/false)`
+
+### `modify(e, 'gravity', true/false)`
+
+### `modify(e, 'fire', ticks)`
+
+Will set mob on fire for `ticks` ticks. Set to 0 to extinguish.
 
 ## Entity Events
 
@@ -2720,12 +2923,14 @@ Here is a list of events that can be handled by scarpet. This list includes pref
 them, but you can add any function to any event if it accepts required number of parameters:
 
 <pre>
+// world callbacks
 __on_tick()         // can access blocks and entities in the overworld
 __on_tick_nether()  // can access blocks and entities in the nether
 __on_tick_ender()   // can access blocks and entities in the end
 __on_chunk_generated(x,z) // called after a chunk is promoted to the full chunk,
                           // prodiving lowest x and z coords in the chunk
                           // event will not work with optifine installed in the game
+__on_lightning(block, mode) // mode is `true` if lightning caused horse trap to spawn
 // player specific callbacks
 __on_player_uses_item(player, item_tuple, hand)  // right click action
 __on_player_releases_item(player, item_tuple, hand)  // client action (e.g. bow)
@@ -2737,6 +2942,10 @@ __on_player_interacts_with_block(player, hand, block, face, hitvec)  //right cli
 __on_player_places_block(player, item_tuple, hand, block) // player have just placed the block.
 __on_player_interacts_with_entity(player, entity, hand)
 __on_player_attacks_entity(player, entity)
+__on_player_takes_damage(player, amount, source, source_entity)
+__on_player_deals_damage(player, amount, entity)
+__on_player_dies(player)
+__on_player_respawns(player)
 __on_player_rides(player, forward, strafe, jumping, sneaking)
 __on_player_jumps(player)
 __on_player_deploys_elytra(player)
@@ -2775,23 +2984,29 @@ scoreboard_add('counter')
 scoreboard_add('lvl','level')
 </pre>
 
-### `scoreboard_remove(objective)`
+### `scoreboard_remove(objective)` `scoreboard_remove(objective, key)`
 
-Removes an objective. Returns `true` if objective has existed and has been removed.
+Removes an entire objective, or an entry in the scoreboard associated with the key. 
+Returns `true` if objective has existed and has been removed, or previous
+value of the scoreboard if players score is removed. Returns `null` if objective didn't exist, or a key was missing
+for the objective.
 
-### `scoreboard_display(objective, place)`
+### `scoreboard_display(place, objective)`
 
-sets display location for a specified `objective`. If `place` is `null`, then display is cleared.
+sets display location for a specified `objective`. If `objective` is `null`, then display is cleared.
 # Auxiliary aspects
 
 Collection of other methods that control smaller, yet still important aspects of the game
 
 ## Sounds
 
-### `sound(name, pos, volume?, pitch?)`
+### `sound(name, pos, volume?, pitch?, mixer?)`
 
-Plays a specific sound `name`, at block or position `pos`, with optional `volume` and modified `pitch`. `pos` can be 
-either a block, triple of coords, or a list of thee numbers. Uses the same options as a corresponding `playsound` command.
+Plays a specific sound `name`, at block or position `pos`, with optional `volume` and modified `pitch`, and under
+optional `mixer`. Default values for `volume`, `pitch` and `mixer` are `1.0`, `1.0`, and `master`. 
+Valid mixer options are `master`, `music`, `record`, `weather`, `block`, `hostile`,`neutral`, `player`, `ambient`
+and `voice`. `pos` can be either a block, triple of coords, or a list of thee numbers. Uses the same options as a
+ corresponding `playsound` command.
 
 ## Particles
 
@@ -2842,6 +3057,60 @@ as a string value.
 
 Displays the result of the expression to the chat. Overrides default `scarpet` behaviour of sending everyting to stderr.
 
+### `format(components, ...)`, `format(l(components, ...))`
+
+Creates a line of formatted text. Each component is either a string indicating formatting and text it corresponds to
+or a decorator affecting the component preceding it.
+
+Regular formatting components is a string that have the structure of: 
+`'<format> <text>'`, like `'gi Hi'`, which in this case indicates a grey, italicised word `'Hi'`. The space to separate the format and the text is mandatory. The format can be empty, but the space still
+needs to be there otherwise the first word of the text will be used as format, which nobody wants.
+
+Format is a list of formatting symbols indicating the format. They can be mixed and matched although color will only be
+applied once. Available symbols include:
+ * `i` - _italic_ 
+ * `b` - **bold**
+ * `s` - ~~strikethrough~~
+ * `u` - <u>underline</u>
+ * `o` - obfuscated
+
+And colors:
+ * `w` - White (default)
+ * `y` - Yellow
+ * `m` - Magenta (light purple)
+ * `r` - Red
+ * `c` - Cyan (aqua)
+ * `l` - Lime
+ * `t` - lighT blue
+ * `f` - dark grayF (weird Flex, but ok)
+ * `g` - Gray
+ * `d` - golD
+ * `p` - PurPle
+ * `n` - browN (dark red)
+ * `q` - turQuoise (dark aqua)
+ * `e` - grEEn
+ * `v` - naVy blue
+ * `k` - blaK
+ * `#FFAACC` - arbitrary RGB color (1.16+), hex notation. Use uppercase for A-F symbols
+ 
+Decorators (listed as extra argument after the component they would affect):
+ * `'^<format> <text>'` - hover over tooltip text, appearing when hovering with your mouse over the text below.
+ * `'?<suggestion>` - command suggestion - a message that will be pasted to chat when text below it is clicked.
+ * `'!<message>'` - a chat message that will be executed when the text below it is clicked.
+ 
+Both suggestions and messages can contain a command, which will be executed as a player that clicks it.
+
+So far the only usecase for formatted texts is with a `print` command. Otherwise it functions like a normal 
+string value representing what is actually displayed on screen.
+ 
+Example usages:
+<pre>
+ print(format('rbu Error: ', 'r Stuff happened!'))
+ print(format('w Click ','tb [HERE]', '^di Awesome!', '!/kill', 'w \ button to win $1000'))
+  // the reason why I backslash the second space is that otherwise command parser may contract consecutive spaces
+  // not a problem in apps
+</pre>
+
 ### `logger(expr)`
 
 Prints the message to system logs, and not to chat.
@@ -2860,23 +3129,61 @@ run('give @s stone 4') -> 1 // this operation was successful once
 Performs autosave, saves all chunks, player data, etc. Useful for programs where autosave is disabled due to 
 performance reasons and saves the world only on demand.
 
-### `load_app_data(), load_app_data(file)`
+### `load_app_data(), load_app_data(file), load_app_data(file, shared?)`
 
 Loads the app data associated with the app from the world /scripts folder. Without argument returns the memory 
 managed and buffered / throttled NBT tag. With a file name - reads explicitly a file with that name from the 
-scripts folder.
+scripts folder that belongs exclusively to the app. if `shared` is true, the file location is not exclusive
+to the app anymore, but located in a shared app space. 
+
+File descriptor can contain letters, numbers and folder separator: `'/'`. Any other characters are stripped
+from the name before saving/loading. Empty descriptors are invalid.
+
+Function returns nbt value with the file content, or `null` if the file is missing or there were problems
+with retrieving the data.
+
+The default no-name app, via `/script run` command can only save/load file from the shared data location.
+
+If the app's name is `'foo'`, the script location would
+be `world/scripts/foo.sc`, system-managed default app data storage is in `world/scripts/foo.data.nbt`, app
+specific data directory is under `world/scripts/foo.data/bar/../baz.nbt`, and shared data space is under
+`world/scripts/shared/bar/../baz.nbt`.
 
 You can use app data to save non-vanilla information separately from the world and other scripts.
 
-### `store_app_data(tag), store_app_data(tag, file)`
+### `store_app_data(tag), store_app_data(tag, file), store_app_data(tag, file, shared?)`
 
-Stores the app data associated with the app from the world /scripts folder. With the `file` parameter saves 
-immediately and with every call, without `file` parameter, it may take up to 10 seconds for the output file 
+Stores the app data associated with the app from the world `/scripts` folder. With the `file` parameter saves 
+immediately and with every call to a specific file defined by the `file`, either in app space, or in the scripts
+shared space if `shared` is true. Without `file` parameter, it may take up to 10
+ seconds for the output file 
 to sync preventing flickering in case this tag changes frequently. It will be synced when server closes.
+
+Returns `true` if the file was saved successfully, `false` otherwise.
+
+Uses the same file structure for exclusive app data, and shared data folder as `load_app_data`.
 
 ### `tick_time()`
 
-Returns game tick counter. Can be used to run certain operations every n-th ticks, or to count in-game time
+Returns server tick counter. Can be used to run certain operations every n-th ticks, or to count in-game time.
+
+### `world_time()`
+
+Returns dimension-specific tick counter.
+
+### `day_time(new_time?)`
+
+Returns current daytime clock value. If `new_time` is specified, sets a new clock
+to that value. Daytime clocks are shared between all dimensions.
+
+### `last_tick_times()`
+
+Returns a 100-long array of recent tick times, in milliseconds. First item on the list is the most recent tick
+If called outside of the main tick (either throgh scheduled tasks, or async execution), then the first item on the
+list may refer to the previous tick performance. In this case the last entry (tick 100) would refer to the most current
+tick. For all intent and purpose, `last_tick_times():0` should be used as last tick execution time, but
+individual tick times may vary greatly, and these need to be taken with the little grain of 
+averaging.
 
 ### `game_tick(mstime?)`
 
@@ -2928,106 +3235,6 @@ The call will return `null` if the statistics options are incorrect, or player d
 If the player encountered the statistic, or game created for him empty one, it will return a number. 
 Scarpet will not affect the entries of the statistics, even if it is just creating empty ones. With `null` response 
 it could either mean your input is wrong, or statistic has effectively a value of `0`.
-
-### `plop(pos, what)`
-
-Plops a structure or a feature at a given `pos`, so block, triple position coordinates or a list of coordinates. 
-To `what` gets plopped and exactly where it often depends on the feature or structure itself. For example, all 
-structures are chunk aligned, and often span multiple chunks. Repeated calls to plop a structure in the same chunk 
-would result either in the same structure generated on top of each other, or with different state, but same position. 
-Most structures generate at specific altitudes, which are hardcoded, or with certain blocks around them. API will 
-cancel all extra position / biome / random requirements for structure / feature placement, but some hardcoded 
-limitations may still cause some of structures/features not to place. Some features require special blocks to be
-present, like coral -> water or ice spikes -> snow block, and for some features, like fossils, placement is all sorts 
-of messed up. This can be partially avoided for structures by setting their structure information via `set_structure`, 
-which sets it without looking into world blocks, and then use `plop` to fill it with blocks. This may, or may not work.
-
-All generated structures will retain their properties, like mob spawning, however in many cases the world / dimension 
-itself has certain rules to spawn mobs, like plopping a nether fortress in the overworld will not spawn nether mobs, 
-because nether mobs can spawn only in the nether, but plopped in the nether - will behave like a valid nether fortress.
-
-`plop` will not use world random number generator to generate structures and features, but its own. This has a benefit 
-that they will generate properly randomly, not the same time every time.
-
-Structure list:
-
-*   `monument`: Ocean Monument. Generates at fixed Y coordinate, surrounds itself with water.
-*   `fortress`: Nether Fortress. Altitude varies, but its bounded by the code.
-*   `mansion`: Woodland Mansion
-*   `jungle_temple`: Jungle Temple
-*   `desert_temple`: Desert Temple. Generates at fixed Y altitude.
-*   `end_city`: End City with Shulkers
-*   `igloo`: Igloo
-*   `shipwreck`: Shipwreck, version1?
-*   `shipwreck2`: Shipwreck, version2?
-*   `witch_hut`
-*   `ocean_ruin`, `ocean_ruin_small`, `ocean_ruin_tall`: Stone variants of ocean ruins.
-*   `ocean_ruin_warm`, `ocean_ruin_warm_small`, `ocean_ruin_warm_tall`: Sandstone variants of ocean ruins.
-*   `treasure`: A treasure chest. Yes, its a whole structure.
-*   `pillager_outpost`: A pillager outpost.
-*   `mineshaft`: A mineshaft.
-*   `mineshaft_mesa`: A Mesa (Badlands) version of a mineshaft.
-*   `village`: Plains, oak village.
-*   `village_desert`: Desert, sandstone village.
-*   `village_savanna`: Savanna, acacia village.
-*   `village_taiga`: Taiga, spruce village.
-*   `village_snowy`: Resolute, Canada.
-
-Feature list:
-
-*   `oak`
-*   `oak_beehive`: oak with a hive (1.15+).
-*   `oak_large`: oak with branches.
-*   `oak_large_beehive`: oak with branches and a beehive (1.15+).
-*   `birch`
-*   `birch_large`: tall variant of birch tree.
-*   `shrub`: low bushes that grow in jungles.
-*   `shrub_acacia`: low bush but configured with acacia (1.14 only)
-*   `shrub_snowy`: low bush with white blocks (1.14 only)
-*   `jungle`: a tree
-*   `jungle_large`: 2x2 jungle tree
-*   `spruce`
-*   `spruce_large`: 2x2 spruce tree
-*   `pine`: spruce with minimal leafage (1.15+)
-*   `pine_large`: 2x2 spruce with minimal leafage (1.15+)
-*   `spruce_matchstick`: see 1.15 pine (1.14 only).
-*   `spruce_matchstick_large`: see 1.15 pine_large (1.14 only).
-*   `dark_oak`
-*   `acacia`
-*   `oak_swamp`: oak with more leaves and vines.
-*   `well`: desert well
-*   `grass`: a few spots of tall grass
-*   `grass_jungle`: little bushier grass feature (1.14 only)
-*   `lush_grass`: grass with patchy ferns (1.15+)
-*   `tall_grass`: 2-high grass patch (1.15+)
-*   `fern`: a few random 2-high ferns
-*   `cactus`: random cacti
-*   `dead_bush`: a few random dead bushi
-*   `fossils`: underground fossils, placement little wonky
-*   `mushroom_brown`: large brown mushroom.
-*   `mushroom_red`: large red mushroom.
-*   `ice_spike`: ice spike. Require snow block below to place.
-*   `glowstone`: glowstone cluster. Required netherrack above it.
-*   `melon`: a patch of melons
-*   `melon_pile`: a pile of melons (1.15+)
-*   `pumpkin`: a patch of pumpkins
-*   `pumpkin_pile`: a pile of pumpkins (1.15+)
-*   `sugarcane`
-*   `lilypad`
-*   `dungeon`: Dungeon. These are hard to place, and fail often.
-*   `iceberg`: Iceberg. Generate at sea level.
-*   `iceberg_blue`: Blue ice iceberg.
-*   `lake`
-*   `lava_lake`
-*   `end_island`
-*   `chorus`: Chorus plant. Require endstone to place.
-*   `sea_grass`: a patch of sea grass. Require water.
-*   `sea_grass_river`: a variant.
-*   `kelp`
-*   `coral_tree, coral_mushroom, coral_claw`: various coral types, random color.
-*   `coral`: random coral structure. Require water to spawn.
-*   `sea_pickle`
-*   `boulder`: A rocky, mossy formation from a giant taiga biome. Doesn't update client properly, needs relogging.
 # `/script run` command
 
 Primary way to input commands. The command executes in the context, position, and dimension of the executing player, 

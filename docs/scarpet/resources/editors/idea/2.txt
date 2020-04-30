@@ -13,6 +13,7 @@ brightness
 chunk_tickets
 create_marker
 current_dimension
+day_time
 destroy
 diamond
 drop_item
@@ -24,18 +25,21 @@ entity_list
 entity_selector
 escape_nbt
 flammable
+format
 game_tick
 generation_status
 hardness
 harvest
 in_dimension
 in_slime_chunk
+inhabited_time
 inventory_find
 inventory_get
 inventory_remove
 inventory_set
 inventory_size
 item_category
+last_tick_times
 light
 liquid
 load_app_data
@@ -95,3 +99,4 @@ transparent
 update
 volume
 without_updates
+world_time

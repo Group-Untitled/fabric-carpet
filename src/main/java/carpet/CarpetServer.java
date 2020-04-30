@@ -118,7 +118,9 @@ public class CarpetServer // static for now - easier to handle all around the co
         if (scriptServer != null) scriptServer.onClose();
         settingsManager.detachServer();
         LoggerRegistry.stopLoggers();
+        TickSpeed.reset();
         extensions.forEach(e -> e.onServerClosed(server));
+        minecraft_server = null;
     }
 
     public static void registerExtensionLoggers()

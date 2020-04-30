@@ -4,10 +4,13 @@ Collection of other methods that control smaller, yet still important aspects of
 
 ## Sounds
 
-### `sound(name, pos, volume?, pitch?)`
+### `sound(name, pos, volume?, pitch?, mixer?)`
 
-Plays a specific sound `name`, at block or position `pos`, with optional `volume` and modified `pitch`. `pos` can be 
-either a block, triple of coords, or a list of thee numbers. Uses the same options as a corresponding `playsound` command.
+Plays a specific sound `name`, at block or position `pos`, with optional `volume` and modified `pitch`, and under
+optional `mixer`. Default values for `volume`, `pitch` and `mixer` are `1.0`, `1.0`, and `master`. 
+Valid mixer options are `master`, `music`, `record`, `weather`, `block`, `hostile`,`neutral`, `player`, `ambient`
+and `voice`. `pos` can be either a block, triple of coords, or a list of thee numbers. Uses the same options as a
+ corresponding `playsound` command.
 
 ## Particles
 
@@ -58,6 +61,60 @@ as a string value.
 
 Displays the result of the expression to the chat. Overrides default `scarpet` behaviour of sending everyting to stderr.
 
+### `format(components, ...)`, `format(l(components, ...))`
+
+Creates a line of formatted text. Each component is either a string indicating formatting and text it corresponds to
+or a decorator affecting the component preceding it.
+
+Regular formatting components is a string that have the structure of: 
+`'<format> <text>'`, like `'gi Hi'`, which in this case indicates a grey, italicised word `'Hi'`. The space to separate the format and the text is mandatory. The format can be empty, but the space still
+needs to be there otherwise the first word of the text will be used as format, which nobody wants.
+
+Format is a list of formatting symbols indicating the format. They can be mixed and matched although color will only be
+applied once. Available symbols include:
+ * `i` - _italic_ 
+ * `b` - **bold**
+ * `s` - ~~strikethrough~~
+ * `u` - <u>underline</u>
+ * `o` - obfuscated
+
+And colors:
+ * `w` - White (default)
+ * `y` - Yellow
+ * `m` - Magenta (light purple)
+ * `r` - Red
+ * `c` - Cyan (aqua)
+ * `l` - Lime
+ * `t` - lighT blue
+ * `f` - dark grayF (weird Flex, but ok)
+ * `g` - Gray
+ * `d` - golD
+ * `p` - PurPle
+ * `n` - browN (dark red)
+ * `q` - turQuoise (dark aqua)
+ * `e` - grEEn
+ * `v` - naVy blue
+ * `k` - blaK
+ * `#FFAACC` - arbitrary RGB color (1.16+), hex notation. Use uppercase for A-F symbols
+ 
+Decorators (listed as extra argument after the component they would affect):
+ * `'^<format> <text>'` - hover over tooltip text, appearing when hovering with your mouse over the text below.
+ * `'?<suggestion>` - command suggestion - a message that will be pasted to chat when text below it is clicked.
+ * `'!<message>'` - a chat message that will be executed when the text below it is clicked.
+ 
+Both suggestions and messages can contain a command, which will be executed as a player that clicks it.
+
+So far the only usecase for formatted texts is with a `print` command. Otherwise it functions like a normal 
+string value representing what is actually displayed on screen.
+ 
+Example usages:
+<pre>
+ print(format('rbu Error: ', 'r Stuff happened!'))
+ print(format('w Click ','tb [HERE]', '^di Awesome!', '!/kill', 'w \ button to win $1000'))
+  // the reason why I backslash the second space is that otherwise command parser may contract consecutive spaces
+  // not a problem in apps
+</pre>
+
 ### `logger(expr)`
 
 Prints the message to system logs, and not to chat.
@@ -76,23 +133,61 @@ run('give @s stone 4') -> 1 // this operation was successful once
 Performs autosave, saves all chunks, player data, etc. Useful for programs where autosave is disabled due to 
 performance reasons and saves the world only on demand.
 
-### `load_app_data(), load_app_data(file)`
+### `load_app_data(), load_app_data(file), load_app_data(file, shared?)`
 
 Loads the app data associated with the app from the world /scripts folder. Without argument returns the memory 
 managed and buffered / throttled NBT tag. With a file name - reads explicitly a file with that name from the 
-scripts folder.
+scripts folder that belongs exclusively to the app. if `shared` is true, the file location is not exclusive
+to the app anymore, but located in a shared app space. 
+
+File descriptor can contain letters, numbers and folder separator: `'/'`. Any other characters are stripped
+from the name before saving/loading. Empty descriptors are invalid.
+
+Function returns nbt value with the file content, or `null` if the file is missing or there were problems
+with retrieving the data.
+
+The default no-name app, via `/script run` command can only save/load file from the shared data location.
+
+If the app's name is `'foo'`, the script location would
+be `world/scripts/foo.sc`, system-managed default app data storage is in `world/scripts/foo.data.nbt`, app
+specific data directory is under `world/scripts/foo.data/bar/../baz.nbt`, and shared data space is under
+`world/scripts/shared/bar/../baz.nbt`.
 
 You can use app data to save non-vanilla information separately from the world and other scripts.
 
-### `store_app_data(tag), store_app_data(tag, file)`
+### `store_app_data(tag), store_app_data(tag, file), store_app_data(tag, file, shared?)`
 
-Stores the app data associated with the app from the world /scripts folder. With the `file` parameter saves 
-immediately and with every call, without `file` parameter, it may take up to 10 seconds for the output file 
+Stores the app data associated with the app from the world `/scripts` folder. With the `file` parameter saves 
+immediately and with every call to a specific file defined by the `file`, either in app space, or in the scripts
+shared space if `shared` is true. Without `file` parameter, it may take up to 10
+ seconds for the output file 
 to sync preventing flickering in case this tag changes frequently. It will be synced when server closes.
+
+Returns `true` if the file was saved successfully, `false` otherwise.
+
+Uses the same file structure for exclusive app data, and shared data folder as `load_app_data`.
 
 ### `tick_time()`
 
-Returns game tick counter. Can be used to run certain operations every n-th ticks, or to count in-game time
+Returns server tick counter. Can be used to run certain operations every n-th ticks, or to count in-game time.
+
+### `world_time()`
+
+Returns dimension-specific tick counter.
+
+### `day_time(new_time?)`
+
+Returns current daytime clock value. If `new_time` is specified, sets a new clock
+to that value. Daytime clocks are shared between all dimensions.
+
+### `last_tick_times()`
+
+Returns a 100-long array of recent tick times, in milliseconds. First item on the list is the most recent tick
+If called outside of the main tick (either throgh scheduled tasks, or async execution), then the first item on the
+list may refer to the previous tick performance. In this case the last entry (tick 100) would refer to the most current
+tick. For all intent and purpose, `last_tick_times():0` should be used as last tick execution time, but
+individual tick times may vary greatly, and these need to be taken with the little grain of 
+averaging.
 
 ### `game_tick(mstime?)`
 
@@ -144,103 +239,3 @@ The call will return `null` if the statistics options are incorrect, or player d
 If the player encountered the statistic, or game created for him empty one, it will return a number. 
 Scarpet will not affect the entries of the statistics, even if it is just creating empty ones. With `null` response 
 it could either mean your input is wrong, or statistic has effectively a value of `0`.
-
-### `plop(pos, what)`
-
-Plops a structure or a feature at a given `pos`, so block, triple position coordinates or a list of coordinates. 
-To `what` gets plopped and exactly where it often depends on the feature or structure itself. For example, all 
-structures are chunk aligned, and often span multiple chunks. Repeated calls to plop a structure in the same chunk 
-would result either in the same structure generated on top of each other, or with different state, but same position. 
-Most structures generate at specific altitudes, which are hardcoded, or with certain blocks around them. API will 
-cancel all extra position / biome / random requirements for structure / feature placement, but some hardcoded 
-limitations may still cause some of structures/features not to place. Some features require special blocks to be
-present, like coral -> water or ice spikes -> snow block, and for some features, like fossils, placement is all sorts 
-of messed up. This can be partially avoided for structures by setting their structure information via `set_structure`, 
-which sets it without looking into world blocks, and then use `plop` to fill it with blocks. This may, or may not work.
-
-All generated structures will retain their properties, like mob spawning, however in many cases the world / dimension 
-itself has certain rules to spawn mobs, like plopping a nether fortress in the overworld will not spawn nether mobs, 
-because nether mobs can spawn only in the nether, but plopped in the nether - will behave like a valid nether fortress.
-
-`plop` will not use world random number generator to generate structures and features, but its own. This has a benefit 
-that they will generate properly randomly, not the same time every time.
-
-Structure list:
-
-*   `monument`: Ocean Monument. Generates at fixed Y coordinate, surrounds itself with water.
-*   `fortress`: Nether Fortress. Altitude varies, but its bounded by the code.
-*   `mansion`: Woodland Mansion
-*   `jungle_temple`: Jungle Temple
-*   `desert_temple`: Desert Temple. Generates at fixed Y altitude.
-*   `end_city`: End City with Shulkers
-*   `igloo`: Igloo
-*   `shipwreck`: Shipwreck, version1?
-*   `shipwreck2`: Shipwreck, version2?
-*   `witch_hut`
-*   `ocean_ruin`, `ocean_ruin_small`, `ocean_ruin_tall`: Stone variants of ocean ruins.
-*   `ocean_ruin_warm`, `ocean_ruin_warm_small`, `ocean_ruin_warm_tall`: Sandstone variants of ocean ruins.
-*   `treasure`: A treasure chest. Yes, its a whole structure.
-*   `pillager_outpost`: A pillager outpost.
-*   `mineshaft`: A mineshaft.
-*   `mineshaft_mesa`: A Mesa (Badlands) version of a mineshaft.
-*   `village`: Plains, oak village.
-*   `village_desert`: Desert, sandstone village.
-*   `village_savanna`: Savanna, acacia village.
-*   `village_taiga`: Taiga, spruce village.
-*   `village_snowy`: Resolute, Canada.
-
-Feature list:
-
-*   `oak`
-*   `oak_beehive`: oak with a hive (1.15+).
-*   `oak_large`: oak with branches.
-*   `oak_large_beehive`: oak with branches and a beehive (1.15+).
-*   `birch`
-*   `birch_large`: tall variant of birch tree.
-*   `shrub`: low bushes that grow in jungles.
-*   `shrub_acacia`: low bush but configured with acacia (1.14 only)
-*   `shrub_snowy`: low bush with white blocks (1.14 only)
-*   `jungle`: a tree
-*   `jungle_large`: 2x2 jungle tree
-*   `spruce`
-*   `spruce_large`: 2x2 spruce tree
-*   `pine`: spruce with minimal leafage (1.15+)
-*   `pine_large`: 2x2 spruce with minimal leafage (1.15+)
-*   `spruce_matchstick`: see 1.15 pine (1.14 only).
-*   `spruce_matchstick_large`: see 1.15 pine_large (1.14 only).
-*   `dark_oak`
-*   `acacia`
-*   `oak_swamp`: oak with more leaves and vines.
-*   `well`: desert well
-*   `grass`: a few spots of tall grass
-*   `grass_jungle`: little bushier grass feature (1.14 only)
-*   `lush_grass`: grass with patchy ferns (1.15+)
-*   `tall_grass`: 2-high grass patch (1.15+)
-*   `fern`: a few random 2-high ferns
-*   `cactus`: random cacti
-*   `dead_bush`: a few random dead bushi
-*   `fossils`: underground fossils, placement little wonky
-*   `mushroom_brown`: large brown mushroom.
-*   `mushroom_red`: large red mushroom.
-*   `ice_spike`: ice spike. Require snow block below to place.
-*   `glowstone`: glowstone cluster. Required netherrack above it.
-*   `melon`: a patch of melons
-*   `melon_pile`: a pile of melons (1.15+)
-*   `pumpkin`: a patch of pumpkins
-*   `pumpkin_pile`: a pile of pumpkins (1.15+)
-*   `sugarcane`
-*   `lilypad`
-*   `dungeon`: Dungeon. These are hard to place, and fail often.
-*   `iceberg`: Iceberg. Generate at sea level.
-*   `iceberg_blue`: Blue ice iceberg.
-*   `lake`
-*   `lava_lake`
-*   `end_island`
-*   `chorus`: Chorus plant. Require endstone to place.
-*   `sea_grass`: a patch of sea grass. Require water.
-*   `sea_grass_river`: a variant.
-*   `kelp`
-*   `coral_tree, coral_mushroom, coral_claw`: various coral types, random color.
-*   `coral`: random coral structure. Require water to spawn.
-*   `sea_pickle`
-*   `boulder`: A rocky, mossy formation from a giant taiga biome. Doesn't update client properly, needs relogging.

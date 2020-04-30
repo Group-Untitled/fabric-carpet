@@ -113,13 +113,23 @@ Triple of entity motion vector, `l(motion_x, motion_y, motion_z)`
 
 Respective component of the motion vector
 
-### `query(e,'name'), query(e,'custom_name'), query(e,'type')`
+### `query(e,'name'), query(e,'display_name'), query(e,'custom_name'), query(e,'type')`
 
 String of entity name
 
-<pre>query(e,'name')  => Leatherworker
+<pre>
+query(e,'name')  => Leatherworker
 query(e,'custom_name')  => null
 query(e,'type')  => villager
+</pre>
+
+## `query(e, 'command_name')`
+
+Returns a valid string to be used in commands to address an entity. Its UUID for all entities except
+player, where its their name.
+
+<pre>
+run('/kill ' + e~'command_name');
 </pre>
 
 ### `query(e,'is_riding')`
@@ -265,6 +275,17 @@ Returns `null` if the argument is not a player, otherwise:
 *   `shadow`: any carpet-shadowed real player
 *   `realms`: ?
 
+### `query(e, 'category')`
+Returns a lowercase string containing the category of the entity (hostile, passive, water, ambient, misc)
+
+### `query(e, 'team')`
+
+Team name for entity, or `null` if no team is assigned.
+
+### `query(e,'ping')`
+    
+Player's ping in milliseconds, or `null` if its not a player.
+
 ### `query(e,'permission_level')`
 
 Player's permission level, or `null` if not applicable for this entity.
@@ -379,7 +400,7 @@ Adds a vector to the motion vector. Most realistic way to apply a force to an en
 
 ### `modify(e, 'age', number)`
 
-Modifies entity's internal age counter. Fiddling with this will affect directly behaviours of complex 
+Modifies entity's internal age counter. Fiddling with this will affect directly AI behaviours of complex 
 entities, so use it with caution.
 
 ### `modify(e, 'pickup_delay', number)`
@@ -436,6 +457,35 @@ and `true`. If no duration is specified, or it is null or 0, the effect is remov
 
 Sets AI to stay around the home position, within `distance` blocks from it. `distance` defaults to 16 blocks. 
 `null` removes it. _May_ not work fully with mobs that have this AI built in, like Villagers.
+
+### `modify(e, 'gamemode', gamemode?), modify(e, 'gamemode',gamemode_id?)`
+
+Modifies gamemode of player to whatever string (case-insensitive) or number you put in.
+
+* 0: survival
+* 1: creative
+* 2: adventure
+* 3: spectator
+
+### `modify(e, 'jumping', true/false)`
+
+Will make the entity constantly jump if set to true, and will stop the entity from jumping if set to false.
+Note that jumping parameter can be fully controlled by the entity AI, so don't expect that this will have 
+a permanent effect. Use `'jump'` to make an entity jump once for sure.
+
+Requires a living entity as an argument.
+
+### `modify(e, 'jump'))`
+
+Will make the entity jump once.
+
+### `modify(e, 'silent', true/false)`
+
+### `modify(e, 'gravity', true/false)`
+
+### `modify(e, 'fire', ticks)`
+
+Will set mob on fire for `ticks` ticks. Set to 0 to extinguish.
 
 ## Entity Events
 
